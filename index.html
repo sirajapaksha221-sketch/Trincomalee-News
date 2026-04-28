@@ -100,7 +100,15 @@
         }
 
         .bg-overlay {
-            background: linear-gradient(to bottom, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95));
+            background: linear-gradient(-45deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.8), rgba(2, 132, 199, 0.2), rgba(15, 23, 42, 0.95));
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         /* Sinhala Font Class */
@@ -228,7 +236,7 @@
                 Latest Stories
             </h2>
             <div class="relative w-full md:w-96">
-                <input type="text" placeholder="Search news..."
+                <input id="search-input" type="text" placeholder="Search news by title or content..."
                     class="w-full pl-12 pr-4 py-3 rounded-xl bg-slate-800/50 border border-slate-700 text-white placeholder-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all outline-none shadow-sm backdrop-blur-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-500 absolute left-4 top-3.5"
                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -244,6 +252,11 @@
             <div class="col-span-full text-center py-20 text-slate-500">
                 Loading news...
             </div>
+        </div>
+
+        <!-- Pagination -->
+        <div id="pagination-container" class="flex flex-wrap justify-center items-center mt-12 gap-2 animate-slide-up" style="animation-delay: 0.4s;">
+            <!-- Pagination buttons will be inserted here dynamically -->
         </div>
 
     </main>

@@ -18,8 +18,14 @@ if not exist "%GIT_PATH%" (
 
 "%GIT_PATH%" add .
 "%GIT_PATH%" commit -m "Auto Update: Publish new content"
-rem Pull before push to prevent loose objects error if they edited github manually
-"%GIT_PATH%" pull origin main --rebase
+
+rem Fetch the latest changes
+"%GIT_PATH%" fetch origin main
+
+rem Try pulling and automatically merging any manual edits on GitHub (autostash helps with dirty tree issues)
+"%GIT_PATH%" pull origin main --rebase --autostash
+
+rem Push the changes
 "%GIT_PATH%" push origin main
 
 echo.

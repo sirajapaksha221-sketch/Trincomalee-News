@@ -1,5 +1,34 @@
+let currentPage = 1;
+const itemsPerPage = 10;
+let filteredData = [];
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize data
+    const newsData = window.newsData;
+    if (newsData) {
+        newsData.sort((a, b) => b.id.localeCompare(a.id, undefined, { numeric: true, sensitivity: 'base' }));
+        filteredData = [...newsData];
+    }
+
+    createParticles(); // Inject advanced animated background
     loadNews();
+
+    // Search functionality
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const allData = window.newsData || [];
+            
+            filteredData = allData.filter(item => 
+                item.title.toLowerCase().includes(query) || 
+                (item.content && item.content.toLowerCase().includes(query))
+            );
+            
+            currentPage = 1; // Reset to page 1
+            loadNews();
+        });
+    }
 
     // Remove Preloader
     const preloader = document.getElementById('preloader');
@@ -10,25 +39,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-async function loadNews() {
+function loadNews() {
     const container = document.getElementById('news-container');
 
     try {
-        // Use global variable from news_data.js
-        const newsData = window.newsData;
-
-        if (!newsData) throw new Error('News data not found. Make sure news_data.js is loaded.');
-
-        // Sort news by ID descending (Folder Name)
-        // formats like 2026-02-15(2) will properly sort before 2026-02-15(1)
-        newsData.sort((a, b) => b.id.localeCompare(a.id, undefined, { numeric: true, sensitivity: 'base' }));
+        if (!window.newsData) throw new Error('News data not found. Make sure news_data.js is loaded.');
 
         container.innerHTML = ''; // Clear loading state
 
-        for (const item of newsData) {
-            const card = createNewsCard(item); // removed await
+        if (filteredData.length === 0) {
+            container.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500">No news found matching your search.</div>`;
+            renderPagination(0);
+            return;
+        }
+
+        const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const currentData = filteredData.slice(startIndex, endIndex);
+
+        for (const item of currentData) {
+            const card = createNewsCard(item); 
             container.appendChild(card);
         }
+
+        renderPagination(totalPages);
 
     } catch (error) {
         console.error('Error loading news:', error);
@@ -38,6 +75,131 @@ async function loadNews() {
                 <p class="text-sm text-slate-400 mt-2">${error.message}</p>
             </div>
         `;
+    }
+}
+
+function renderPagination(totalPages) {
+    const paginationContainer = document.getElementById('pagination-container');
+    if (!paginationContainer) return;
+    
+    paginationContainer.innerHTML = '';
+
+    if (totalPages <= 1) return;
+
+    // Previous Button
+    const prevBtn = document.createElement('button');
+    prevBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+        </svg>
+    `;
+    prevBtn.className = `w-10 h-10 flex items-center justify-center rounded-xl font-medium transition-all duration-300 ${currentPage === 1 ? 'bg-slate-800/50 text-slate-600 cursor-not-allowed' : 'bg-slate-800 text-brand-400 hover:bg-brand-600 hover:text-white shadow-lg hover:shadow-brand-500/30'}`;
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => {
+        if (currentPage > 1) {
+            currentPage--;
+            loadNews();
+            scrollToNews();
+        }
+    };
+    paginationContainer.appendChild(prevBtn);
+
+    // Page Buttons
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+            const pageBtn = document.createElement('button');
+            pageBtn.textContent = i;
+            if (i === currentPage) {
+                pageBtn.className = 'w-10 h-10 flex items-center justify-center rounded-xl bg-brand-600 text-white font-bold shadow-lg shadow-brand-500/30 transform scale-110';
+            } else {
+                pageBtn.className = 'w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-brand-300 transition-all duration-300';
+            }
+            pageBtn.onclick = () => {
+                currentPage = i;
+                loadNews();
+                scrollToNews();
+            };
+            paginationContainer.appendChild(pageBtn);
+        } else if (i === currentPage - 2 || i === currentPage + 2) {
+            const dots = document.createElement('span');
+            dots.textContent = '...';
+            dots.className = 'text-slate-500 px-2';
+            paginationContainer.appendChild(dots);
+        }
+    }
+
+    // Next Button
+    const nextBtn = document.createElement('button');
+    nextBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+        </svg>
+    `;
+    nextBtn.className = `w-10 h-10 flex items-center justify-center rounded-xl font-medium transition-all duration-300 ${currentPage === totalPages ? 'bg-slate-800/50 text-slate-600 cursor-not-allowed' : 'bg-slate-800 text-brand-400 hover:bg-brand-600 hover:text-white shadow-lg hover:shadow-brand-500/30'}`;
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            loadNews();
+            scrollToNews();
+        }
+    };
+    paginationContainer.appendChild(nextBtn);
+}
+
+function scrollToNews() {
+    const container = document.getElementById('news-container');
+    if (container) {
+        const y = container.getBoundingClientRect().top + window.scrollY - 150;
+        window.scrollTo({top: y, behavior: 'smooth'});
+    }
+}
+
+function createParticles() {
+    const container = document.createElement('div');
+    container.className = 'fixed inset-0 pointer-events-none z-[0] overflow-hidden'; // z-0 so it sits behind cards
+    for (let i = 0; i < 25; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'absolute rounded-full mix-blend-screen opacity-40';
+        
+        const size = Math.random() * 150 + 50; 
+        const posX = Math.random() * 100;
+        const posY = Math.random() * 100;
+        const duration = Math.random() * 20 + 15;
+        const delay = Math.random() * 5;
+        
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        particle.style.left = `${posX}%`;
+        particle.style.top = `${posY}%`;
+        
+        const colors = ['#38bdf8', '#818cf8', '#c084fc', '#2dd4bf'];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        
+        particle.style.background = `radial-gradient(circle, ${color} 0%, transparent 60%)`;
+        particle.style.filter = 'blur(15px)';
+        
+        particle.animate([
+            { transform: 'translate(0, 0) scale(1)', opacity: 0.1 },
+            { transform: `translate(${Math.random()*300 - 150}px, ${Math.random()*300 - 150}px) scale(1.3)`, opacity: 0.6 },
+            { transform: 'translate(0, 0) scale(1)', opacity: 0.1 }
+        ], {
+            duration: duration * 1000,
+            iterations: Infinity,
+            delay: delay * 1000,
+            direction: 'alternate',
+            easing: 'ease-in-out'
+        });
+        
+        container.appendChild(particle);
+    }
+    
+    // Check if bg-overlay exists to insert after it, else body prepend
+    const overlay = document.querySelector('.bg-overlay');
+    if (overlay) {
+        overlay.insertAdjacentElement('afterend', container);
+    } else {
+        document.body.prepend(container);
     }
 }
 
