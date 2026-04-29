@@ -390,8 +390,9 @@ function initPremiumAnimations() {
             const span = document.createElement('span');
             // Advanced premium blur-up reveal effect
             span.className = 'inline-block opacity-0 transform translate-y-6 blur-sm transition-all duration-700 ease-out';
-            span.innerText = word + ' ';
+            span.textContent = word;
             descEl.appendChild(span);
+            descEl.appendChild(document.createTextNode(' '));
             
             setTimeout(() => {
                 span.classList.remove('opacity-0', 'translate-y-6', 'blur-sm');
